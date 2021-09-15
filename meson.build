@@ -304,7 +304,7 @@ foreach tuple : tests
 endforeach
 
 libsystemd_sym_path = '@0@/@1@'.format(meson.current_source_dir(), libsystemd_sym)
-libsystemd = shared_library(
+libsystemd = library(
         'basu',
         soversion : soversion,
         include_directories : includes,
