@@ -330,7 +330,7 @@ exe = executable('basuctl',
                  'src/busctl/busctl-introspect.h',
                  include_directories : includes,
                  link_with : [libbasic,
-                              libsystemd_static],
+                              libsystemd],
                  install : true)
 
 meson.override_dependency('basu', declare_dependency(
