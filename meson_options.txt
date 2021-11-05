@@ -14,3 +14,6 @@ option('system-bus-address', type : 'string',
 
 option('audit', type : 'combo', choices : ['auto', 'true', 'false'],
        description : 'libaudit support')
+
+option('libcap', type : 'feature',
+       description : 'libcap support')

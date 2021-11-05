@@ -231,7 +231,7 @@ threads = dependency('threads')
 librt = cc.find_library('rt')
 libm = cc.find_library('m')
 
-libcap = dependency('libcap', required: false)
+libcap = dependency('libcap', required: get_option('libcap'))
 have_libcap = libcap.found()
 conf.set10('HAVE_LIBCAP', have_libcap)
 
