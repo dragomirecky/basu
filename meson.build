@@ -235,15 +235,8 @@ libcap = dependency('libcap', required: get_option('libcap'))
 have_libcap = libcap.found()
 conf.set10('HAVE_LIBCAP', have_libcap)
 
-want_audit = get_option('audit')
-if want_audit != 'false'
-        libaudit = dependency('audit', required : want_audit == 'true')
-        have = libaudit.found()
-else
-        have = false
-        libaudit = []
-endif
-conf.set10('HAVE_AUDIT', have)
+libaudit = dependency('audit', required : get_option('audit'))
+conf.set10('HAVE_AUDIT', libaudit.found())
 
 tests = []
 

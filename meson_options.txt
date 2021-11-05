@@ -12,7 +12,7 @@ option('system-bus-address', type : 'string',
        description : 'The address of the sytem bus (defined at dbus compilation)',
        value : 'unix:path=/var/run/dbus/system_bus_socket')
 
-option('audit', type : 'combo', choices : ['auto', 'true', 'false'],
+option('audit', type : 'feature',
        description : 'libaudit support')
 
 option('libcap', type : 'feature',
