@@ -3,7 +3,13 @@ project(
   'c',
   version : '0.2.0',
   license : 'LGPLv2+',
-  default_options : ['c_std=gnu99', 'prefix=/usr', 'sysconfdir=/etc', 'localstatedir=/var'],
+  default_options : [
+    'c_std=gnu99',
+    'prefix=/usr',
+    'sysconfdir=/etc',
+    'localstatedir=/var',
+    'warning_level=2',
+  ],
   meson_version : '>= 0.54'
 )
 
@@ -22,7 +28,6 @@ cc = meson.get_compiler('c')
 cxx_cmd = ''
 
 possible_cc_flags = [
-        '-Wextra',
         '-Werror=undef',
         '-Wlogical-op',
         '-Wmissing-include-dirs',
