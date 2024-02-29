@@ -7,6 +7,7 @@
 
 #include "alloc-util.h"
 #include "memfd-util.h"
+#include "missing.h"
 
 int memfd_set_sealed(int fd) {
 #if defined(__FreeBSD__) && __FreeBSD__ < 13
