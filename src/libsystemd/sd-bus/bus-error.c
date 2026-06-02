@@ -70,9 +70,11 @@ BUS_ERROR_MAP_ELF_REGISTER const sd_bus_error_map bus_standard_errors[] = {
         SD_BUS_ERROR_MAP_END
 };
 
+#ifndef __APPLE__
 /* GCC maps this magically to the beginning and end of the BUS_ERROR_MAP section */
 extern const sd_bus_error_map __start_BUS_ERROR_MAP[];
 extern const sd_bus_error_map __stop_BUS_ERROR_MAP[];
+#endif
 
 /* Additional maps registered with sd_bus_error_add_map() are in this
  * NULL terminated array */
@@ -106,6 +108,21 @@ static int bus_error_name_to_errno(const char *name) {
                                         return m->code;
                         }
 
+#ifdef __APPLE__
+        /* Mach-O has no __start_/__stop_ section symbols; iterate the known
+         * compile-time maps explicitly. */
+        {
+                extern const sd_bus_error_map bus_common_errors[];
+                static const sd_bus_error_map * const elf_maps[] = {
+                        bus_standard_errors,
+                        bus_common_errors,
+                };
+                for (size_t i = 0; i < ELEMENTSOF(elf_maps); i++)
+                        for (m = elf_maps[i]; m->code != BUS_ERROR_MAP_END_MARKER; m++)
+                                if (streq(m->name, name))
+                                        return m->code;
+        }
+#else
         m = __start_BUS_ERROR_MAP;
 #ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
         while (m < __stop_BUS_ERROR_MAP) {
@@ -125,6 +142,7 @@ static int bus_error_name_to_errno(const char *name) {
 
                 m++;
         }
+#endif
 #endif
 
         return EIO;

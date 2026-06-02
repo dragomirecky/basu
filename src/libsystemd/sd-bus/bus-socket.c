@@ -119,6 +119,16 @@ bool bus_socket_auth_needs_write(sd_bus *b) {
 }
 
 static int bus_socket_write_null_byte(sd_bus *b) {
+#if defined(__APPLE__)
+        /* macOS has no SCM_CREDENTIALS/SCM_CREDS ancillary credential passing;
+         * the peer obtains our credentials via LOCAL_PEERCRED. Just send the
+         * leading NUL byte. */
+        int k = send(b->output_fd, "\0", 1, MSG_DONTWAIT);
+        if (k < 0)
+                return errno == EAGAIN ? 0 : -errno;
+        b->send_null_byte = false;
+        return 1;
+#else
 #if defined(__linux__)
 #define SOCKET_CRED_OPTION SCM_CREDENTIALS
         struct ucred creds;
@@ -162,6 +172,7 @@ static int bus_socket_write_null_byte(sd_bus *b) {
                 return errno == EAGAIN ? 0 : -errno;
         b->send_null_byte = false;
         return 1;
+#endif
 }
 
 static int bus_socket_write_auth(sd_bus *b) {
@@ -743,6 +754,11 @@ int bus_socket_connect(sd_bus *b) {
                 b->input_fd = socket(b->sockaddr.sa.sa_family, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0);
                 if (b->input_fd < 0)
                         return -errno;
+#ifdef __APPLE__
+                /* SOCK_CLOEXEC/SOCK_NONBLOCK are no-ops here (defined to 0); apply via fcntl. */
+                (void) fcntl(b->input_fd, F_SETFD, FD_CLOEXEC);
+                (void) fcntl(b->input_fd, F_SETFL, O_NONBLOCK);
+#endif
 
                 b->input_fd = fd_move_above_stdio(b->input_fd);
 

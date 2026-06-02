@@ -1,0 +1,19 @@
+[build-system]
+requires = ["meson-python>=0.16"]
+build-backend = "mesonpy"
+
+[project]
+name = "basu"
+description = "Standalone sd-bus library (basu) packaged as a Python wheel"
+readme = "README.md"
+license = { text = "LGPL-2.1-or-later" }
+requires-python = ">=3.8"
+dynamic = ["version"]
+
+[tool.meson-python.args]
+setup = [
+    "-Dpython_package=true",
+    "-Daudit=disabled",
+    "-Dlibcap=disabled",
+    "-Dwarning_level=0",
+]

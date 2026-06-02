@@ -193,8 +193,9 @@ conf.set('GPERF_LEN_TYPE', gperf_len_type,
 
 nobody_user = get_option('nobody-user')
 
-if not meson.is_cross_build()
-        getent_result = run_command('getent', 'passwd', '65534')
+getent_prog = find_program('getent', required : false)
+if not meson.is_cross_build() and getent_prog.found()
+        getent_result = run_command(getent_prog, 'passwd', '65534', check : false)
         if getent_result.returncode() == 0
                 name = getent_result.stdout().split(':')[0]
                 if name != nobody_user
@@ -233,7 +234,7 @@ conf.set10('ENABLE_DEBUG_HASHMAP', enable_debug_hashmap)
 #####################################################################
 
 threads = dependency('threads')
-librt = cc.find_library('rt')
+librt = cc.find_library('rt', required: false)
 libm = cc.find_library('m')
 
 libcap = dependency('libcap', required: get_option('libcap'))
@@ -263,12 +264,32 @@ includes = include_directories(
 
 add_project_arguments('-include', meson.current_build_dir() / 'config.h', language : 'c')
 
+if host_machine.system() == 'darwin'
+        add_project_arguments(
+                '-include', meson.current_source_dir() / 'src/basic/macos-compat.h',
+                language : 'c')
+endif
+
+# When packaging as a Python wheel (meson-python), install the library, headers
+# and locator module under the importable `basu` package directory so consumers
+# can find them via `import basu` without a system install or pkg-config.
+build_python_package = get_option('python_package')
+if build_python_package
+        py = import('python').find_installation()
+        basu_pkgdir = py.get_install_dir() / 'basu'
+        basu_install_libdir = basu_pkgdir / 'lib'
+        basu_install_includedir = basu_pkgdir / 'include' / 'basu'
+else
+        basu_install_libdir = get_option('libdir')
+        basu_install_includedir = get_option('includedir') / 'basu'
+endif
+
 subdir('src/basic')
 subdir('src/libsystemd')
 subdir('src/systemd')
 subdir('src/test')
 
-foreach tuple : tests
+foreach tuple : (host_machine.system() == 'darwin' ? [] : tests)
         sources = tuple[0]
         link_with = tuple[1]
         dependencies = tuple[2]
@@ -302,34 +323,51 @@ foreach tuple : tests
 endforeach
 
 libsystemd_sym_path = '@0@/@1@'.format(meson.current_source_dir(), libsystemd_sym)
-libsystemd = library(
-        'basu',
-        soversion : soversion,
-        include_directories : includes,
-        link_args : ['-shared',
-                     '-Wl,--version-script=' + libsystemd_sym_path],
-        link_with : libbasic,
-        link_whole : libsystemd_static,
-        dependencies : [threads,
-                        librt],
-        link_depends : libsystemd_sym,
-        install : true)
+if host_machine.system() == 'darwin'
+        # macOS ld has no --version-script; -fvisibility=hidden + _public_ already
+        # restricts the exported symbols to the sd_bus_* public API.
+        libsystemd_link_args = []
+else
+        libsystemd_link_args = ['-shared',
+                                '-Wl,--version-script=' + libsystemd_sym_path]
+endif
+libsystemd_kwargs = {
+        'include_directories' : includes,
+        'link_args' : libsystemd_link_args,
+        'link_with' : libbasic,
+        'link_whole' : libsystemd_static,
+        'dependencies' : [threads, librt],
+        'link_depends' : libsystemd_sym,
+        'install' : true,
+        'install_dir' : basu_install_libdir,
+}
+if not build_python_package
+        # Wheels can't carry the versioned symlink; ship a plain libbasu.dylib.
+        libsystemd_kwargs += {'soversion' : soversion}
+endif
+libsystemd = library('basu', kwargs : libsystemd_kwargs)
 
-pkgconfig = import('pkgconfig')
-pkgconfig.generate(libsystemd,
-        version: meson.project_version(),
-        filebase: meson.project_name(),
-        name: meson.project_name(),
-        description: 'basu library')
+if build_python_package
+        py.install_sources('python/basu/__init__.py', subdir : 'basu')
+else
+        pkgconfig = import('pkgconfig')
+        pkgconfig.generate(libsystemd,
+                version: meson.project_version(),
+                filebase: meson.project_name(),
+                name: meson.project_name(),
+                description: 'basu library')
+endif
 
-exe = executable('basuctl',
-                 'src/busctl/busctl.c',
-                 'src/busctl/busctl-introspect.c',
-                 'src/busctl/busctl-introspect.h',
-                 include_directories : includes,
-                 link_with : [libbasic,
-                              libsystemd],
-                 install : true)
+if host_machine.system() != 'darwin'
+        exe = executable('basuctl',
+                         'src/busctl/busctl.c',
+                         'src/busctl/busctl-introspect.c',
+                         'src/busctl/busctl-introspect.h',
+                         include_directories : includes,
+                         link_with : [libbasic,
+                                      libsystemd],
+                         install : true)
+endif
 
 meson.override_dependency('basu', declare_dependency(
   link_with : libsystemd,

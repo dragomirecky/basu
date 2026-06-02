@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: LGPL-2.1+ */
 
 #include <errno.h>
+#ifndef __APPLE__
 #include <mqueue.h>
+#endif
 #include <netinet/in.h>
 #include <sys/stat.h>
 #include <sys/un.h>

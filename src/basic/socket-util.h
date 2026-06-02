@@ -23,7 +23,7 @@ union sockaddr_union {
         struct sockaddr_un un;
 };
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
 struct ucred {
         uint32_t pid;
         uint32_t uid;

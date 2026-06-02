@@ -3,7 +3,14 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#ifdef __APPLE__
+/* macOS does not ship <uchar.h>; char16_t/char32_t are plain typedefs in C. */
+#include <stdint.h>
+typedef uint_least16_t char16_t;
+typedef uint_least32_t char32_t;
+#else
 #include <uchar.h>
+#endif
 
 #include "macro.h"
 

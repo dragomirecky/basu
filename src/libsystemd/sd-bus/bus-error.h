@@ -34,12 +34,20 @@ int bus_error_set_errnofv(sd_bus_error *e, int error, const char *format, va_lis
  * warn for the unknown attribute, so just disable -Wattributes.
  */
 
+#ifdef __APPLE__
+/* Mach-O lacks the __start_/__stop_ section-bounds mechanism; the maps are
+ * iterated explicitly in bus-error.c, so they only need to be retained. */
+#define BUS_ERROR_MAP_ELF_REGISTER                                      \
+        __attribute__ ((__used__))                                      \
+        __attribute__ ((aligned(8)))
+#else
 #define BUS_ERROR_MAP_ELF_REGISTER                                      \
         _Pragma("GCC diagnostic ignored \"-Wattributes\"")              \
         __attribute__ ((__section__("BUS_ERROR_MAP")))                  \
         __attribute__ ((__used__))                                      \
         __attribute__ ((retain))                                        \
         __attribute__ ((aligned(8)))
+#endif
 
 #define BUS_ERROR_MAP_ELF_USE(errors)                                   \
         extern const sd_bus_error_map errors[];                         \

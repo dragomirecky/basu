@@ -3,6 +3,8 @@
 
 #ifdef __FreeBSD__
 #include <sys/endian.h>
+#elif defined(__APPLE__)
+#include "macos-endian.h"
 #else
 #include <byteswap.h>
 #endif
