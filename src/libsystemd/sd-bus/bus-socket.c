@@ -645,6 +645,19 @@ void bus_socket_setup(sd_bus *b) {
         (void) fd_inc_rcvbuf(b->input_fd, SNDBUF_SIZE);
         (void) fd_inc_sndbuf(b->output_fd, SNDBUF_SIZE);
 
+#ifdef __APPLE__
+        /* macOS has no MSG_NOSIGNAL (it is #defined to 0 here); SO_NOSIGPIPE
+         * makes writes to a closed peer fail with EPIPE instead of raising
+         * SIGPIPE, which would otherwise kill a plain C/C++ consumer (e.g. the
+         * honeybee-gcode-reader binary) that has no SIGPIPE handler. */
+        {
+                int on = 1;
+                (void) setsockopt(b->output_fd, SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof(on));
+                if (b->input_fd != b->output_fd)
+                        (void) setsockopt(b->input_fd, SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof(on));
+        }
+#endif
+
         b->message_version = 1;
         b->message_endian = 0;
 }
