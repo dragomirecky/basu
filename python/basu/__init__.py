@@ -11,7 +11,13 @@ from __future__ import annotations
 
 import os
 
-__all__ = ["get_include", "get_library_dir", "get_prefix", "__version__"]
+__all__ = [
+    "get_include",
+    "get_library_dir",
+    "get_pkg_config_dir",
+    "get_prefix",
+    "__version__",
+]
 
 __version__ = "0.2.1"
 
@@ -31,3 +37,8 @@ def get_include() -> str:
 def get_library_dir() -> str:
     """Directory containing ``libbasu`` — pass with ``-L`` and as an rpath."""
     return os.path.join(_HERE, "lib")
+
+
+def get_pkg_config_dir() -> str:
+    """Directory holding the relocatable ``basu.pc`` (for PKG_CONFIG_PATH)."""
+    return os.path.join(_HERE, "lib", "pkgconfig")

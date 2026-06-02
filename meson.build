@@ -349,6 +349,14 @@ libsystemd = library('basu', kwargs : libsystemd_kwargs)
 
 if build_python_package
         py.install_sources('python/basu/__init__.py', subdir : 'basu')
+        # Relocatable pkg-config file so C/C++ consumers (e.g. sdbus-c++) can
+        # find basu inside the wheel via PKG_CONFIG_PATH=<pkg>/lib/pkgconfig.
+        basu_pc = configure_file(
+                input : 'basu.pc.in',
+                output : 'basu.pc',
+                configuration : {'VERSION' : meson.project_version()},
+        )
+        install_data(basu_pc, install_dir : basu_install_libdir / 'pkgconfig')
 else
         pkgconfig = import('pkgconfig')
         pkgconfig.generate(libsystemd,

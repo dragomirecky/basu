@@ -1,0 +1,12 @@
+# Relocatable pkg-config file for basu shipped inside the Python wheel.
+# ${pcfiledir} is <site-packages>/basu/lib/pkgconfig, so prefix resolves to the
+# bundled basu package regardless of where the wheel is installed.
+prefix=${pcfiledir}/../..
+includedir=${prefix}/include
+libdir=${prefix}/lib
+
+Name: basu
+Description: basu (standalone sd-bus library)
+Version: @VERSION@
+Libs: -L${libdir} -lbasu
+Cflags: -I${includedir}
